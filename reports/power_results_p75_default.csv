@@ -1,0 +1,5 @@
+"variant","activity","saif_annot_pct","saif_matched","dynamic_mw","static_mw","total_mw","overhead_pct"
+"a","default","-1","NA","34","60","95","0"
+"b","default","-1","NA","35","60","95","0"
+"c1","default","-1","NA","35","60","96","1.1"
+"c2","default","-1","NA","40","60","101","6.3"
