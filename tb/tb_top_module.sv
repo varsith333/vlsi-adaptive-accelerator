@@ -470,6 +470,21 @@ module tb_top_module;
                  $time, e_B);
     end
 
+    // ------------------------ waveform dump (optional) ---------------------
+    // Enabled by run_sim.ps1 -Dump, which creates build\dump.enable (xsim's
+    // CWD is build/, so the VCD lands at build/tb_top_module.vcd). Default
+    // runs are untouched: no marker file -> no dump. Depth 1 = tb-scope
+    // signals only (clk, m_*, e_*, inj_*, fr_*, ...), keeping the VCD small.
+    integer dump_f;
+    initial begin
+        dump_f = $fopen("dump.enable", "r");
+        if (dump_f != 0) begin
+            $fclose(dump_f);
+            $dumpfile("tb_top_module.vcd");
+            $dumpvars(1, tb_top_module);
+        end
+    end
+
     // ------------------------------ summary --------------------------------
     initial begin
         repeat (3) @(posedge clk);

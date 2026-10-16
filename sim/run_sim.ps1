@@ -8,7 +8,8 @@ param(
     [Parameter(Mandatory=$true)][string]$Tb,
     [string[]]$XsimArgs = @(),
     [switch]$NoRtl,
-    [string]$SaifPath = ""
+    [string]$SaifPath = "",
+    [switch]$Dump
 )
 $ErrorActionPreference = "Stop"
 $bin   = "D:\Xilinx\2025.2\Vivado\bin"
@@ -35,7 +36,7 @@ if ($LASTEXITCODE -ne 0) { throw "xvlog FAILED on tb/$Tb.sv (see $Tb.compile.log
 
 # SAIF dumping needs full signal visibility -> elaborate with -debug all when
 # a SAIF trace was requested (otherwise keep the fast default snapshot).
-$debugArgs = if ($SaifPath -ne "") { @("-debug", "all") } else { @() }
+$debugArgs = if ($SaifPath -ne "" -or $Dump) { @("-debug", "all") } else { @() }
 & "$bin\xelab.bat" $Tb -s "${Tb}_snap" @debugArgs *>&1 | Out-File "$build\$Tb.elab.log"
 if ($LASTEXITCODE -ne 0) { throw "xelab FAILED (see $Tb.elab.log)" }
 
@@ -59,7 +60,18 @@ if ($SaifPath -ne "") {
     }
     Write-Output "=== SAIF written: $SaifPath ($((Get-Item $SaifPath).Length) bytes) ==="
 } else {
-    & "$bin\xsim.bat" "${Tb}_snap" -R @XsimArgs *>&1 | Tee-Object "$build\$Tb.run.log"
+    # -Dump: create the marker file in build/ (xsim's CWD) so the TB's guarded
+    # $dumpvars opens the VCD (build\<Tb>.vcd). File-based because the Vivado
+    # loader rejects '+' args on the xsim command line. The marker is always
+    # removed afterwards, so ordinary runs can never pick up a stale dump.
+    $marker = Join-Path $build "dump.enable"
+    if ($Dump) { Set-Content $marker "dump" -NoNewline }
+    else       { Remove-Item $marker -Force -ErrorAction SilentlyContinue }
+    try {
+        & "$bin\xsim.bat" "${Tb}_snap" -R @XsimArgs *>&1 | Tee-Object "$build\$Tb.run.log"
+    } finally {
+        Remove-Item $marker -Force -ErrorAction SilentlyContinue
+    }
 }
 if ($LASTEXITCODE -ne 0) { throw "xsim FAILED (see $Tb.run.log)" }
 Write-Output "=== run_sim.ps1 done: $Tb ==="

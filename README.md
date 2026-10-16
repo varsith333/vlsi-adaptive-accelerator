@@ -129,18 +129,20 @@ Throughput (committed results per 1000 cycles): **90.9 / 90.9 / 90.8 / 87.4**
 Protection overhead is **single-digit percent** on total power; annotation
 coverage is disclosed (7–12% of nets) — see `docs/experiment_plan.md`.
 
-<!-- TODO before publishing: add waveform screenshots to docs/img/ and uncomment.
-
 ### Waveforms
 
-![Golden system test — 4 variants, zero mismatches](docs/img/golden_run.png)
-![Fault injection — monitor flags before wrong result (det_lat = 1)](docs/img/fault_detect.png)
-![Adaptive escalation — NORMAL → PROTECTED → recovery → de-escalation](docs/img/escalation.png)
+![Protection modes over the full run — A never protects, B is always on, C1/C2 adapt](docs/img/waveform_overview.png)
 
-Capture hint: run `powershell -ExecutionPolicy Bypass -File sim\run_sim.ps1 -Tb tb_top_module`
-and export the scope screenshot / VCD from xsim.
+![Fault detection — variant B: parity fault flagged in ~1 cycle, err_count 0→1→2](docs/img/waveform_fault_detection.png)
 
--->
+![Adaptive escalation — C1/C2: NORMAL → RECOVERY → PROTECTED → back to MONITORED](docs/img/waveform_escalation.png)
+
+Regenerate the images from a fresh simulation run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File sim\run_sim.ps1 -Tb tb_top_module -Dump   # writes build\tb_top_module.vcd
+python tools\plot_waveforms.py                                                        # renders docs\img\*.png
+```
 
 ## Repository layout
 
@@ -148,6 +150,7 @@ and export the scope screenshot / VCD from xsim.
 rtl/      14 SystemVerilog modules (datapath + reliability subsystem + 4 wrappers)
 tb/       9 testbenches: golden system test, unit tests, fault-injection campaign
 sim/      Tcl/PowerShell flows + XDC constraints (100 MHz characterization, 75 MHz signoff)
+tools/    waveform plotter: VCD → PNG screenshots for this README
 docs/     requirements, architecture, verification plan, experiment plan, final report
 reports/  measured evidence: synthesis/timing, fault injection, power (CSV + Vivado RPT)
 ```
